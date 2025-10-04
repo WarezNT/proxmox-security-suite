@@ -15,8 +15,7 @@ proxmox-security-suite/
 │   │   └── 🔬 advanced-security-test.sh  # Advanced penetration testing
 │   └── 📖 README.md                      # Scripts documentation
 ├── 📚 README.md                          # Main documentation (English)
-├── 📚 README.ro.md                       # Romanian documentation
-├── 🚀 QUICKSTART.md                      # Quick start guide
+├──  QUICKSTART.md                      # Quick start guide
 ├── 🔗 EXTERNAL_RESOURCES.md              # 300+ curated external resources
 ├── 🤝 CONTRIBUTING.md                    # Contribution guidelines
 ├── 📝 CHANGELOG.md                       # Version history
@@ -235,15 +234,6 @@ sudo apt install nmap nikto curl dnsutils -y
 **Language:** English  
 **Size:** ~650 lines  
 **Audience:** All users
-
----
-
-#### `README.ro.md` (Romanian)
-**Role:** Romanian language documentation
-
-**Content:** Same as README.md but in Romanian  
-**Language:** Romanian  
-**Size:** ~650 lines
 
 ---
 

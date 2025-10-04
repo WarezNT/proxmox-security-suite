@@ -184,7 +184,6 @@ ip route show | grep "100\."
 
 For complete documentation, see:
 - [README.md](../README.md) - Main documentation (English)
-- [README.ro.md](../README.ro.md) - Romanian documentation
 - [QUICKSTART.md](../QUICKSTART.md) - Quick start guide
 - [EXTERNAL_RESOURCES.md](../EXTERNAL_RESOURCES.md) - External resources
 - [PROJECT_STRUCTURE.md](../PROJECT_STRUCTURE.md) - Project organization

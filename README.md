@@ -6,8 +6,6 @@
 [![Proxmox](https://img.shields.io/badge/Proxmox-8.x-orange)](https://www.proxmox.com/)
 [![Automation](https://img.shields.io/badge/automation-100%25-blue)](README.md)
 
-[🇷🇴 Romanian Documentation](README.ro.md)
-
 ---
 
 ## ⚠️ DISCLAIMER
@@ -359,7 +357,6 @@ See [EXTERNAL_RESOURCES.md](EXTERNAL_RESOURCES.md) for 300+ curated links includ
 
 ### Documentation
 - [README.md](README.md) - Main documentation (English)
-- [README.ro.md](README.ro.md) - Romanian documentation
 - [QUICKSTART.md](QUICKSTART.md) - Quick start guide
 - [EXTERNAL_RESOURCES.md](EXTERNAL_RESOURCES.md) - External documentation links
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
