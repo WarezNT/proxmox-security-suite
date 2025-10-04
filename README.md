@@ -55,17 +55,17 @@ Unlike manual hardening guides or partial security scripts, this is the **only c
 ## 📋 Table of Contents
 
 - [Disclaimer](#️-disclaimer)
-- [Overview](#overview)
-- [Security Architecture](#security-architecture)
-- [Quick Installation](#quick-installation)
-- [Included Scripts](#included-scripts)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Security Testing](#security-testing)
-- [Monitoring & Alerting](#monitoring--alerting)
-- [Troubleshooting](#troubleshooting)
-- [Best Practices](#best-practices)
-- [External Resources](#external-resources)
+- [Overview](#-overview)
+- [Security Architecture](#️-security-architecture)
+- [Quick Installation](#-quick-installation)
+- [Included Scripts](#-included-scripts)
+- [Configuration](#-configuration)
+- [Usage](#-usage)
+- [Security Testing](#-security-testing)
+- [Monitoring & Alerting](#-monitoring--alerting)
+- [Troubleshooting](#-troubleshooting)
+- [Best Practices](#-best-practices)
+- [External Resources](#-external-resources)
 
 **📄 [Full Disclaimer Document](DISCLAIMER.md)**
 
