@@ -152,12 +152,17 @@ proxmox-security test basic
 
 #### External Test (from a different server/VPS)
 
-⚠️ **IMPORTANT**: Test from a server NOT connected to your Tailscale network!
+⚠️ **CRITICAL REQUIREMENT**: Audit scripts **MUST** be run from:
+- **Linux VPS** (recommended) or **Linux workstation**
+- System **NOT connected** to your Tailscale network (Tailnet)
+- Testing from a Tailscale-connected device will show **false positives**
+
+**Why?** If your testing machine is on the same Tailnet, it will have access to management ports (22, 8006, 81), making them appear insecure when they're actually protected.
 
 ```bash
-# Copy the test script to an external server
-scp security-test.sh user@external-server:/tmp/
-scp advanced-security-test.sh user@external-server:/tmp/
+# Copy the test scripts to an external Linux server/VPS
+scp scripts/audit/security-test.sh user@external-server:/tmp/
+scp scripts/audit/advanced-security-test.sh user@external-server:/tmp/
 
 # SSH to external server and run
 ssh user@external-server

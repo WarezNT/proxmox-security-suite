@@ -261,15 +261,25 @@ proxmox-security-updates rollback   # Restore previous config
 
 ## 🧪 Security Testing
 
+⚠️ **CRITICAL**: Audit scripts must be run from an **external system** (Linux VPS or workstation) that is **NOT connected to your Tailscale network**. Running from a Tailscale-connected device will show false positives.
+
+### Requirements for Testing Machine
+
+- **Linux VPS** (recommended) or **Linux workstation**
+- **NOT connected** to the same Tailscale network (Tailnet) as your Proxmox server
+- Must have: `nmap`, `curl`, `openssl`, `nikto` (for advanced testing)
+
 ### Basic Testing
 
 ```bash
+# Run from external Linux machine (NOT on Tailscale)
 ./scripts/audit/security-test.sh YOUR_PUBLIC_IP yourdomain.com YOUR_TAILSCALE_IP
 ```
 
 ### Advanced Testing
 
 ```bash
+# Run from external Linux machine (NOT on Tailscale)
 ./scripts/audit/advanced-security-test.sh YOUR_PUBLIC_IP yourdomain.com
 ```
 

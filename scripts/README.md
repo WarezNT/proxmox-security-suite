@@ -82,15 +82,31 @@ sudo proxmox-security-updates rollback   # Rollback changes
 
 ## 🔍 Audit Scripts (`audit/`)
 
-Audit scripts perform security testing and validation. **Must be run from external VPS (not on Tailscale network).**
+⚠️ **CRITICAL**: Audit scripts **MUST** be run from an **external system** that is **NOT connected** to your Tailscale network.
+
+**Supported Testing Platforms:**
+- **Linux VPS** (DigitalOcean, Linode, Vultr, etc.) - **Recommended**
+- **Linux workstation/laptop** (Ubuntu, Debian, Fedora, etc.)
+
+**Requirements:**
+- System must NOT be connected to the same Tailscale network (Tailnet)
+- Basic tools: `curl`, `nc`, `openssl`
+- Advanced tools: `nmap`, `nikto`, `dnsutils` (for advanced testing)
+
+**Why External Testing?**  
+If you test from a Tailscale-connected device, management ports (22, 8006, 81) will be accessible, showing **false positives**. External testing validates that public internet users cannot access your management interfaces.
 
 ### `security-test.sh`
 Basic security testing from external perspective.
 
 **Usage:**
 ```bash
-# From external VPS (NOT on Tailscale):
-./scripts/audit/security-test.sh YOUR_PUBLIC_IP yourdomain.com YOUR_TAILSCALE_IP
+# Download to external Linux VPS/workstation:
+wget https://raw.githubusercontent.com/WarezNT/proxmox-security-suite/main/scripts/audit/security-test.sh
+chmod +x security-test.sh
+
+# Run test (NOT from Tailscale network):
+./security-test.sh YOUR_PUBLIC_IP yourdomain.com YOUR_TAILSCALE_IP
 ```
 
 **Tests:**
@@ -114,11 +130,15 @@ Advanced penetration testing and vulnerability scanning.
 
 **Usage:**
 ```bash
-# From external VPS only:
-./scripts/audit/advanced-security-test.sh YOUR_PUBLIC_IP yourdomain.com
+# Download to external Linux VPS/workstation:
+wget https://raw.githubusercontent.com/WarezNT/proxmox-security-suite/main/scripts/audit/advanced-security-test.sh
+chmod +x advanced-security-test.sh
 
-# Prerequisites:
+# Install dependencies:
 sudo apt install nmap nikto curl dnsutils -y
+
+# Run test (NOT from Tailscale network):
+./advanced-security-test.sh YOUR_PUBLIC_IP yourdomain.com
 ```
 
 **Tests:**
