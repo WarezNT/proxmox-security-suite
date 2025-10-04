@@ -5,6 +5,8 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Proxmox](https://img.shields.io/badge/Proxmox-8.x%20%7C%209.x-orange)](https://www.proxmox.com/)
 [![Automation](https://img.shields.io/badge/automation-100%25-blue)](README.md)
+[![Release](https://img.shields.io/github/v/release/WarezNT/proxmox-security-suite)](https://github.com/WarezNT/proxmox-security-suite/releases)
+[![Downloads](https://img.shields.io/github/downloads/WarezNT/proxmox-security-suite/total)](https://github.com/WarezNT/proxmox-security-suite/releases)
 
 ---
 
