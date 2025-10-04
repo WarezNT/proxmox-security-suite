@@ -243,5 +243,5 @@ Found a broken link or want to add a resource? See [CONTRIBUTING.md](CONTRIBUTIN
 
 ---
 
-**Last Updated**: January 2025  
+**Last Updated**: October 2025  
 **Maintained by**: Proxmox Security Suite contributors
