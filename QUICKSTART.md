@@ -1,5 +1,7 @@
 # Quick Start Guide - Proxmox Security Suite
 
+**Compatible with Proxmox VE 8.x and 9.x**
+
 ## 📝 Before You Begin
 
 This guide will help you set up the Proxmox Security Suite on your infrastructure. Before starting, gather the following information:

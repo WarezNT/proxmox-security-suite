@@ -3,7 +3,7 @@
 **The first and only complete automated security suite for Proxmox VE** - From zero to secured in 15 minutes, no security expertise required.
 
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Proxmox](https://img.shields.io/badge/Proxmox-8.x-orange)](https://www.proxmox.com/)
+[![Proxmox](https://img.shields.io/badge/Proxmox-8.x%20%7C%209.x-orange)](https://www.proxmox.com/)
 [![Automation](https://img.shields.io/badge/automation-100%25-blue)](README.md)
 
 ---
@@ -93,6 +93,8 @@ Internet → Cloudflare → Proxmox (YOUR_PUBLIC_IP) → NPM (10.10.0.2) → Ser
 - ✅ Automated configuration backups
 
 ## 🚀 Quick Installation
+
+**Compatible with Proxmox VE 8.x and 9.x**
 
 ### On Proxmox Host
 
