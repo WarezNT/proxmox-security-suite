@@ -24,6 +24,29 @@ echo -e "${BLUE}║              https://github.com/WarezNT                     
 echo -e "${BLUE}╚═══════════════════════════════════════════════════════════════╝${NC}"
 echo
 
+# Display disclaimer
+echo -e "${YELLOW}╔═══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${YELLOW}║                        DISCLAIMER                             ║${NC}"
+echo -e "${YELLOW}╚═══════════════════════════════════════════════════════════════╝${NC}"
+echo -e "${RED}USE AT YOUR OWN RISK${NC}"
+echo
+echo -e "${YELLOW}This software is provided 'as is' without warranty of any kind.${NC}"
+echo -e "${YELLOW}The authors are NOT LIABLE for any damages or security issues.${NC}"
+echo -e "${YELLOW}Always test in non-production environment first!${NC}"
+echo
+echo -e "${YELLOW}By continuing, you acknowledge that you:${NC}"
+echo -e "${YELLOW}  • Understand the risks of modifying security configurations${NC}"
+echo -e "${YELLOW}  • Have adequate backups of your system${NC}"
+echo -e "${YELLOW}  • Accept full responsibility for any consequences${NC}"
+echo
+read -p "Do you accept these terms and wish to continue? (yes/NO) " -r
+echo
+if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+    echo -e "${RED}Installation cancelled by user.${NC}"
+    exit 0
+fi
+echo
+
 # Check if running as root
 if [[ $EUID -ne 0 ]]; then
    echo -e "${RED}This script must be run as root (use sudo)${NC}" 

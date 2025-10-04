@@ -8,6 +8,30 @@
 
 ---
 
+## ⚠️ DISCLAIMER
+
+**UTILIZARE PE PROPRIUL RISC**
+
+Acest software este furnizat "ca atare", fără garanții de niciun fel, exprese sau implicite. Autorii și contribuitorii:
+
+- **NU OFERĂ GARANȚII** privind securitatea, fiabilitatea sau funcționalitatea acestor scripturi
+- **NU SUNT RĂSPUNZĂTORI** pentru daune, pierderi de date, defecțiuni de sistem sau breșe de securitate
+- **NU GARANTEAZĂ** că aceste scripturi vor preveni toate amenințările sau atacurile de securitate
+- **RECOMANDĂ FERM** testarea într-un mediu non-producție mai întâi
+- **SFĂTUIESC** menținerea backup-urilor adecvate înainte de orice modificare de sistem
+
+**Prin utilizarea acestui software, confirmați că:**
+- Înțelegeți riscurile implicate în modificarea configurațiilor de securitate
+- Aveți cunoștințe tehnice adecvate sau veți solicita asistență profesională
+- Acceptați responsabilitatea deplină pentru orice consecințe ale utilizării acestor scripturi
+- Autorii nu pot fi trași la răspundere pentru daune directe sau indirecte
+
+**Notă de Securitate:** Această suită implementează practici de securitate standard din industrie, dar nicio soluție de securitate nu este 100% infailibilă. Mențineți întotdeauna mai multe straturi de securitate, actualizați sistemele și monitorizați regulat.
+
+**📄 [Document Complet Disclaimer (EN)](DISCLAIMER.md)**
+
+---
+
 ## 🌟 De Ce Acest Proiect?
 
 Spre deosebire de ghidurile manuale de hardening sau scripturile parțiale de securitate, aceasta este **singura suită completă de automatizare a securității** pentru Proxmox:

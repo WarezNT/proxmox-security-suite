@@ -10,6 +10,28 @@
 
 ---
 
+## ⚠️ DISCLAIMER
+
+**USE AT YOUR OWN RISK**
+
+This software is provided "as is", without warranty of any kind, express or implied. The authors and contributors:
+
+- Make **NO WARRANTIES** regarding the security, reliability, or functionality of these scripts
+- Are **NOT LIABLE** for any damages, data loss, system failures, or security breaches that may occur
+- **DO NOT guarantee** that these scripts will prevent all security threats or attacks
+- **STRONGLY RECOMMEND** testing in a non-production environment first
+- **ADVISE** maintaining proper backups before making any system changes
+
+**By using this software, you acknowledge that:**
+- You understand the risks involved in modifying system security configurations
+- You have adequate technical knowledge or will seek professional assistance
+- You accept full responsibility for any consequences of using these scripts
+- The authors cannot be held liable for any direct or indirect damages
+
+**Security Note:** This suite implements industry-standard security practices, but no security solution is 100% foolproof. Always maintain multiple layers of security, keep systems updated, and monitor regularly.
+
+---
+
 ## 🌟 Why This Project?
 
 Unlike manual hardening guides or partial security scripts, this is the **only complete security automation suite** for Proxmox:
@@ -32,6 +54,7 @@ Unlike manual hardening guides or partial security scripts, this is the **only c
 
 ## 📋 Table of Contents
 
+- [Disclaimer](#️-disclaimer)
 - [Overview](#overview)
 - [Security Architecture](#security-architecture)
 - [Quick Installation](#quick-installation)
@@ -43,6 +66,8 @@ Unlike manual hardening guides or partial security scripts, this is the **only c
 - [Troubleshooting](#troubleshooting)
 - [Best Practices](#best-practices)
 - [External Resources](#external-resources)
+
+**📄 [Full Disclaimer Document](DISCLAIMER.md)**
 
 ## 🎯 Overview
 
