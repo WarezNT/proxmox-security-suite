@@ -1,0 +1,99 @@
+# Proxmox Security Suite - .gitignore
+
+# Personal configuration files (may contain sensitive data)
+*.local
+*.backup
+*.bak
+*-backup-*
+
+# Log files
+*.log
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Personal notes and sensitive data
+NOTES.md
+PERSONAL.md
+secrets/
+private/
+
+# Backup directories
+backups/
+*.tar.gz
+*.zip
+*.tgz
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.*.sw?
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Test results
+test-results/
+*.test
+test-output/
+
+# AI Assistant files (development only, not for public repo)
+.github/copilot-instructions.md
+copilot-instructions.md
+ai-instructions.md
+*-ai-*.md
+
+# Personal IP addresses and domains (if accidentally committed)
+*-personal.conf
+*-custom.conf
+
+# SSH keys (should never be in repo)
+*.key
+*.pem
+id_rsa*
+*.ppk
+
+# Database dumps
+*.sql
+*.db
+*.sqlite
+
+# Certificate files
+*.crt
+*.cert
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# OS generated files
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
