@@ -8,9 +8,41 @@
 SCRIPT_DIR="/usr/local/bin"
 LOG_DIR="/var/log/proxmox-security"
 PID_FILE="/var/run/proxmox-security-monitor.pid"
-ALERT_EMAIL="admin@yourdomain.com"
-TAILSCALE_RANGE="100.64.0.0/10"
-PRIVATE_RANGE="10.10.0.0/24"
+
+# Load configuration from file if exists
+CONFIG_FILE="/etc/proxmox-security/monitor.conf"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    # Auto-detect network configuration
+    TAILSCALE_RANGE=$(ip addr show tailscale0 2>/dev/null | grep -oP 'inet \K[\d.]+/\d+' | head -1)
+    if [ -z "$TAILSCALE_RANGE" ]; then
+        TAILSCALE_RANGE="100.64.0.0/10"  # Default Tailscale CGNAT range
+    fi
+    
+    PRIVATE_RANGE=$(ip addr show | grep -oP 'inet \K10\.\d+\.\d+\.\d+/\d+' | head -1)
+    if [ -z "$PRIVATE_RANGE" ]; then
+        PRIVATE_RANGE="10.10.0.0/24"  # Default fallback
+    fi
+    
+    # Prompt for email if not configured
+    if [ -z "$ALERT_EMAIL" ]; then
+        read -p "Enter email address for security alerts: " ALERT_EMAIL
+        if [ -z "$ALERT_EMAIL" ]; then
+            ALERT_EMAIL="root@$(hostname -f)"
+        fi
+    fi
+    
+    # Save configuration for future use
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    cat > "$CONFIG_FILE" << EOF
+# Proxmox Security Monitor Configuration
+ALERT_EMAIL="$ALERT_EMAIL"
+TAILSCALE_RANGE="$TAILSCALE_RANGE"
+PRIVATE_RANGE="$PRIVATE_RANGE"
+EOF
+    echo "Configuration saved to $CONFIG_FILE"
+fi
 
 # Colors
 RED='\033[0;31m'

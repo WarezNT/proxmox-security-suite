@@ -75,16 +75,48 @@ EOF
 # Function to configure container firewall
 configure_container_firewall() {
     echo -e "${YELLOW}Configuring container-level firewalls...${NC}"
+    echo
     
     # Prompt for NPM container ID
     read -p "Enter your NPM container ID (e.g., 100, 600): " NPM_CONTAINER_ID
     
     # Enable firewall for NPM container
     if pct list | grep -q "^${NPM_CONTAINER_ID}"; then
+        echo -e "${BLUE}Detecting network configuration...${NC}"
+        
+        # Detect private network from bridges
+        PRIVATE_NETWORK=$(ip addr show | grep -oP 'inet \K10\.\d+\.\d+\.\d+/\d+' | head -1)
+        if [ -z "$PRIVATE_NETWORK" ]; then
+            PRIVATE_NETWORK="10.10.0.0/24"
+        fi
+        
+        # Detect Tailscale network
+        TAILSCALE_NETWORK=$(ip addr show tailscale0 2>/dev/null | grep -oP 'inet \K100\.\d+\.\d+\.\d+/\d+' | head -1)
+        if [ -z "$TAILSCALE_NETWORK" ]; then
+            TAILSCALE_NETWORK="100.64.0.0/10"  # Default Tailscale CGNAT range
+        else
+            # Extract network from Tailscale IP (keep /10 for full range)
+            TAILSCALE_NETWORK="100.64.0.0/10"
+        fi
+        
+        echo
+        echo -e "${YELLOW}Detected network configuration:${NC}"
+        echo -e "  Private Network: ${GREEN}${PRIVATE_NETWORK}${NC}"
+        echo -e "  Tailscale Network: ${GREEN}${TAILSCALE_NETWORK}${NC}"
+        echo
+        read -p "Use these networks? (Y/n): " -n 1 -r
+        echo
+        
+        if [[ $REPLY =~ ^[Nn]$ ]]; then
+            echo
+            read -p "Enter your private network (e.g., 10.10.0.0/24): " PRIVATE_NETWORK
+            read -p "Enter your Tailscale network (e.g., 100.64.0.0/10): " TAILSCALE_NETWORK
+        fi
+        
         pct set ${NPM_CONTAINER_ID} -firewall 1
         
-        # Create firewall rules for NPM
-        cat > /etc/pve/firewall/${NPM_CONTAINER_ID}.fw << 'EOF'
+        # Create firewall rules for NPM with detected/confirmed networks
+        cat > /etc/pve/firewall/${NPM_CONTAINER_ID}.fw << EOF
 [OPTIONS]
 enable: 1
 policy_in: DROP
@@ -93,15 +125,17 @@ log_level_in: info
 
 [RULES]
 # Allow HTTP/HTTPS from private network
-IN ACCEPT -source 10.10.0.0/24 -dport 80,443
+IN ACCEPT -source ${PRIVATE_NETWORK} -dport 80,443
 # Allow NPM admin from Tailscale network
-IN ACCEPT -source 100.64.0.0/10 -dport 81
+IN ACCEPT -source ${TAILSCALE_NETWORK} -dport 81
 # Allow ICMP for monitoring
 IN ACCEPT -p icmp
 # Log and drop everything else
 IN DROP -log warning
 EOF
         echo -e "${GREEN}✓ NPM container (${NPM_CONTAINER_ID}) firewall configured${NC}"
+        echo -e "${BLUE}  Private Network: ${PRIVATE_NETWORK}${NC}"
+        echo -e "${BLUE}  Tailscale Network: ${TAILSCALE_NETWORK}${NC}"
     else
         echo -e "${YELLOW}⚠ Container ${NPM_CONTAINER_ID} not found, skipping${NC}"
     fi
@@ -192,15 +226,28 @@ EOF
 # Function to setup log monitoring
 setup_log_monitoring() {
     echo -e "${YELLOW}Setting up log monitoring...${NC}"
+    echo
+    
+    # Prompt for email configuration
+    read -p "Enter admin email address for log reports: " ADMIN_EMAIL
+    if [ -z "$ADMIN_EMAIL" ]; then
+        ADMIN_EMAIL="admin@yourdomain.com"
+        echo -e "${YELLOW}Using default: ${ADMIN_EMAIL}${NC}"
+    fi
+    
+    read -p "Enter sender email address (or press Enter for root@$(hostname)): " FROM_EMAIL
+    if [ -z "$FROM_EMAIL" ]; then
+        FROM_EMAIL="root@$(hostname -f)"
+    fi
     
     # Install logwatch for log analysis
     apt install -y logwatch
     
-    # Configure logwatch
-    cat > /etc/logwatch/conf/logwatch.conf << 'EOF'
+    # Configure logwatch with user-provided emails
+    cat > /etc/logwatch/conf/logwatch.conf << EOF
 LogDir = /var/log
-MailTo = admin@yourdomain.com
-MailFrom = proxmox@yourdomain.com
+MailTo = ${ADMIN_EMAIL}
+MailFrom = ${FROM_EMAIL}
 Detail = Med
 Service = All
 Range = yesterday
@@ -224,11 +271,22 @@ EOF
 EOF
 
     echo -e "${GREEN}✓ Log monitoring configured${NC}"
+    echo -e "${BLUE}  Reports will be sent to: ${ADMIN_EMAIL}${NC}"
 }
 
 # Function to create security check script
 create_security_checker() {
     echo -e "${YELLOW}Creating security check script...${NC}"
+    echo
+    
+    # Prompt for email if not already set
+    if [ -z "$ADMIN_EMAIL" ]; then
+        read -p "Enter admin email address for security reports: " ADMIN_EMAIL
+        if [ -z "$ADMIN_EMAIL" ]; then
+            ADMIN_EMAIL="admin@yourdomain.com"
+            echo -e "${YELLOW}Using default: ${ADMIN_EMAIL}${NC}"
+        fi
+    fi
     
     cat > /usr/local/bin/security-check.sh << 'EOF'
 #!/bin/bash
@@ -269,10 +327,11 @@ EOF
 
     chmod +x /usr/local/bin/security-check.sh
     
-    # Add to daily cron
-    (crontab -l 2>/dev/null; echo "0 6 * * * /usr/local/bin/security-check.sh | mail -s 'Proxmox Security Report' admin@yourdomain.com") | crontab -
+    # Add to daily cron with user-provided email
+    (crontab -l 2>/dev/null; echo "0 6 * * * /usr/local/bin/security-check.sh | mail -s 'Proxmox Security Report' ${ADMIN_EMAIL}") | crontab -
     
     echo -e "${GREEN}✓ Security check script created${NC}"
+    echo -e "${BLUE}  Daily reports will be sent to: ${ADMIN_EMAIL}${NC}"
 }
 
 # Main menu

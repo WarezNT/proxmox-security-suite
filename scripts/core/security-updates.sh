@@ -7,7 +7,24 @@
 # Configuration
 LOG_FILE="/var/log/proxmox-updates.log"
 BACKUP_DIR="/var/backups/proxmox-configs"
-EMAIL="admin@yourdomain.com"
+
+# Load email configuration
+CONFIG_FILE="/etc/proxmox-security/monitor.conf"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+    EMAIL="$ALERT_EMAIL"
+fi
+
+# Prompt for email if not configured
+if [ -z "$EMAIL" ]; then
+    read -p "Enter email address for update notifications: " EMAIL
+    if [ -z "$EMAIL" ]; then
+        EMAIL="root@$(hostname -f)"
+    fi
+    # Save for future use
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    echo "ALERT_EMAIL=\"$EMAIL\"" >> "$CONFIG_FILE"
+fi
 
 # Colors
 RED='\033[0;31m'
@@ -228,10 +245,10 @@ schedule_updates() {
     fi
     
     # Configure unattended-upgrades for security updates only
-    cat > /etc/apt/apt.conf.d/50unattended-upgrades << 'EOF'
+    cat > /etc/apt/apt.conf.d/50unattended-upgrades << EOF
 Unattended-Upgrade::Allowed-Origins {
-    "${distro_id}:${distro_codename}-security";
-    "Proxmox:${distro_codename}";
+    "\${distro_id}:\${distro_codename}-security";
+    "Proxmox:\${distro_codename}";
 };
 
 Unattended-Upgrade::Package-Blacklist {
@@ -243,7 +260,7 @@ Unattended-Upgrade::AutoFixInterruptedDpkg "true";
 Unattended-Upgrade::MinimalSteps "true";
 Unattended-Upgrade::Remove-Unused-Dependencies "true";
 Unattended-Upgrade::Automatic-Reboot "false";
-Unattended-Upgrade::Mail "admin@yourdomain.com";
+Unattended-Upgrade::Mail "${EMAIL}";
 EOF
 
     # Configure automatic updates schedule
