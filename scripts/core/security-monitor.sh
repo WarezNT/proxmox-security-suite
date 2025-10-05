@@ -27,10 +27,25 @@ else
     
     # Prompt for email if not configured
     if [ -z "$ALERT_EMAIL" ]; then
-        read -p "Enter email address for security alerts: " ALERT_EMAIL
-        if [ -z "$ALERT_EMAIL" ]; then
-            ALERT_EMAIL="root@$(hostname -f)"
-        fi
+        while true; do
+            read -p "Enter email address for security alerts: " ALERT_EMAIL
+            if [ -n "$ALERT_EMAIL" ]; then
+                # Check if it looks like an email
+                if echo "$ALERT_EMAIL" | grep -qE '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'; then
+                    break
+                else
+                    echo "Invalid email format. Please try again."
+                fi
+            else
+                # Allow default if user really wants it
+                read -p "Use default (root@$(hostname -f))? (y/N): " -n 1 -r
+                echo
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    ALERT_EMAIL="root@$(hostname -f)"
+                    break
+                fi
+            fi
+        done
     fi
     
     # Save configuration for future use
@@ -152,7 +167,7 @@ check_processes() {
     fi
     
     # Check for high CPU usage processes
-    local high_cpu=$(ps aux --sort=-%cpu | head -5 | awk '$3 > 80.0 {print $11 " (" $3 "%)"}'
+    local high_cpu=$(ps aux --sort=-%cpu | head -5 | awk '$3 > 80.0 {print $11 " (" $3 "%)"}'  )
     if [ -n "$high_cpu" ]; then
         send_alert "MEDIUM" "High CPU usage detected: $high_cpu"
     fi

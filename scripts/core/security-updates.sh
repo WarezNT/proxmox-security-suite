@@ -17,10 +17,25 @@ fi
 
 # Prompt for email if not configured
 if [ -z "$EMAIL" ]; then
-    read -p "Enter email address for update notifications: " EMAIL
-    if [ -z "$EMAIL" ]; then
-        EMAIL="root@$(hostname -f)"
-    fi
+    while true; do
+        read -p "Enter email address for update notifications: " EMAIL
+        if [ -n "$EMAIL" ]; then
+            # Check if it looks like an email
+            if echo "$EMAIL" | grep -qE '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'; then
+                break
+            else
+                echo "Invalid email format. Please try again."
+            fi
+        else
+            # Allow default if user really wants it
+            read -p "Use default (root@$(hostname -f))? (y/N): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                EMAIL="root@$(hostname -f)"
+                break
+            fi
+        fi
+    done
     # Save for future use
     mkdir -p "$(dirname "$CONFIG_FILE")"
     echo "ALERT_EMAIL=\"$EMAIL\"" >> "$CONFIG_FILE"

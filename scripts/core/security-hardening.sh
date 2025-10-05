@@ -239,16 +239,25 @@ setup_log_monitoring() {
     echo -e "${YELLOW}Setting up log monitoring...${NC}"
     echo
     
-    # Prompt for email configuration
-    read -p "Enter admin email address for log reports: " ADMIN_EMAIL
-    if [ -z "$ADMIN_EMAIL" ]; then
-        ADMIN_EMAIL="admin@yourdomain.com"
-        echo -e "${YELLOW}Using default: ${ADMIN_EMAIL}${NC}"
-    fi
+    # Prompt for email configuration with validation
+    while true; do
+        read -p "Enter admin email address for log reports: " ADMIN_EMAIL
+        if [ -n "$ADMIN_EMAIL" ]; then
+            # Check if it looks like an email
+            if echo "$ADMIN_EMAIL" | grep -qE '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'; then
+                break
+            else
+                echo -e "${RED}Invalid email format. Please try again.${NC}"
+            fi
+        else
+            echo -e "${YELLOW}Email address is required. Please enter a valid email.${NC}"
+        fi
+    done
     
-    read -p "Enter sender email address (or press Enter for root@$(hostname)): " FROM_EMAIL
+    read -p "Enter sender email address (or press Enter for root@$(hostname -f)): " FROM_EMAIL
     if [ -z "$FROM_EMAIL" ]; then
         FROM_EMAIL="root@$(hostname -f)"
+        echo -e "${BLUE}Using: ${FROM_EMAIL}${NC}"
     fi
     
     # Install logwatch for log analysis
@@ -290,13 +299,23 @@ create_security_checker() {
     echo -e "${YELLOW}Creating security check script...${NC}"
     echo
     
-    # Prompt for email if not already set
+    # Prompt for email if not already set from previous function
     if [ -z "$ADMIN_EMAIL" ]; then
-        read -p "Enter admin email address for security reports: " ADMIN_EMAIL
-        if [ -z "$ADMIN_EMAIL" ]; then
-            ADMIN_EMAIL="admin@yourdomain.com"
-            echo -e "${YELLOW}Using default: ${ADMIN_EMAIL}${NC}"
-        fi
+        while true; do
+            read -p "Enter admin email address for security reports: " ADMIN_EMAIL
+            if [ -n "$ADMIN_EMAIL" ]; then
+                # Check if it looks like an email
+                if echo "$ADMIN_EMAIL" | grep -qE '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'; then
+                    break
+                else
+                    echo -e "${RED}Invalid email format. Please try again.${NC}"
+                fi
+            else
+                echo -e "${YELLOW}Email address is required. Please enter a valid email.${NC}"
+            fi
+        done
+    else
+        echo -e "${BLUE}Using email from log monitoring: ${ADMIN_EMAIL}${NC}"
     fi
     
     cat > /usr/local/bin/security-check.sh << 'EOF'
