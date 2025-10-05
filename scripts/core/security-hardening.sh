@@ -113,9 +113,8 @@ configure_container_firewall() {
             read -p "Enter your Tailscale network (e.g., 100.64.0.0/10): " TAILSCALE_NETWORK
         fi
         
-        pct set ${NPM_CONTAINER_ID} -firewall 1
-        
         # Create firewall rules for NPM with detected/confirmed networks
+        # Note: Creating the .fw file automatically enables the firewall for the container
         cat > /etc/pve/firewall/${NPM_CONTAINER_ID}.fw << EOF
 [OPTIONS]
 enable: 1
