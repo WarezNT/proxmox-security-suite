@@ -125,14 +125,25 @@ log_level_in: info
 
 [RULES]
 # Allow HTTP/HTTPS from private network
-IN ACCEPT -source ${PRIVATE_NETWORK} -dport 80,443
+IN ACCEPT -source ${PRIVATE_NETWORK} -dport 80,443 -proto tcp
 # Allow NPM admin from Tailscale network
-IN ACCEPT -source ${TAILSCALE_NETWORK} -dport 81
-# Allow ICMP for monitoring
-IN ACCEPT -p icmp
+IN ACCEPT -source ${TAILSCALE_NETWORK} -dport 81 -proto tcp
+# Allow ICMP (ping) for monitoring
+IN ACCEPT -proto icmp
 # Log and drop everything else
 IN DROP -log warning
 EOF
+        
+        # Validate the firewall configuration
+        echo
+        echo -e "${BLUE}Validating firewall configuration...${NC}"
+        if pve-firewall compile 2>&1 | grep -q "error"; then
+            echo -e "${RED}✗ Firewall configuration has errors!${NC}"
+            pve-firewall compile 2>&1
+        else
+            echo -e "${GREEN}✓ Firewall configuration is valid${NC}"
+        fi
+        
         echo -e "${GREEN}✓ NPM container (${NPM_CONTAINER_ID}) firewall configured${NC}"
         echo -e "${BLUE}  Private Network: ${PRIVATE_NETWORK}${NC}"
         echo -e "${BLUE}  Tailscale Network: ${TAILSCALE_NETWORK}${NC}"
@@ -293,36 +304,193 @@ create_security_checker() {
 # Daily security check script
 
 echo "=== Proxmox Security Check - $(date) ==="
+echo
 
 # Check fail2ban status
 echo "Fail2Ban Status:"
-fail2ban-client status
+echo "─────────────────────────────────────────"
+if command -v fail2ban-client >/dev/null 2>&1; then
+    fail2ban-client status 2>/dev/null || echo "Fail2Ban not running"
+    echo
+    # Show banned IPs
+    for jail in $(fail2ban-client status 2>/dev/null | grep "Jail list" | cut -d: -f2 | tr ',' ' '); do
+        banned=$(fail2ban-client status $jail 2>/dev/null | grep "Currently banned" | awk '{print $NF}')
+        if [ "$banned" != "0" ]; then
+            echo "⚠️  Jail $jail: $banned banned IP(s)"
+        fi
+    done
+else
+    echo "Fail2Ban not installed"
+fi
 echo
 
-# Check for unusual network connections
-echo "Unusual connections to management ports:"
-netstat -tuln | grep -E ':22|:8006|:81'
+# Check for unusual network connections to management ports
+echo "Management Port Status:"
+echo "─────────────────────────────────────────"
+# Check SSH (should be filtered from public)
+ssh_public=$(netstat -tuln | grep ':22 ' | grep '0.0.0.0' | wc -l)
+if [ "$ssh_public" -gt 0 ]; then
+    echo "⚠️  SSH is listening on 0.0.0.0:22 (PUBLIC - should be Tailscale only)"
+else
+    echo "✓ SSH properly restricted"
+fi
+
+# Check Proxmox GUI (should be filtered from public)
+pve_public=$(netstat -tuln | grep ':8006' | grep '0.0.0.0' | wc -l)
+if [ "$pve_public" -gt 0 ]; then
+    echo "⚠️  Proxmox GUI on 0.0.0.0:8006 (verify firewall blocks public access)"
+else
+    echo "✓ Proxmox GUI properly configured"
+fi
+
+# List all management ports
+echo
+echo "Active management ports:"
+netstat -tuln | grep -E ':22|:8006|:81' | sed 's/^/  /'
 echo
 
 # Check firewall status
 echo "Firewall Status:"
-pve-firewall status
+echo "─────────────────────────────────────────"
+if command -v pve-firewall >/dev/null 2>&1; then
+    pve_status=$(pve-firewall status 2>&1)
+    if echo "$pve_status" | grep -q "enabled/running"; then
+        echo "✓ Proxmox Firewall: enabled and running"
+    else
+        echo "⚠️  Proxmox Firewall status: $(echo "$pve_status" | head -1)"
+    fi
+    
+    # Check for firewall errors and offer to fix them
+    if echo "$pve_status" | grep -q "errors in rule"; then
+        echo "⚠️  Firewall configuration errors detected!"
+        echo
+        
+        # Check each container firewall config
+        for fw_file in /etc/pve/firewall/*.fw; do
+            if [ -f "$fw_file" ]; then
+                # Check for rules missing -proto
+                if grep -q "dport.*ACCEPT\|ACCEPT.*dport" "$fw_file" 2>/dev/null; then
+                    if ! grep -q "proto tcp\|proto udp" "$fw_file" 2>/dev/null; then
+                        echo "  Found fixable rules in: $fw_file"
+                        echo "  Missing -proto specification for port rules"
+                        
+                        # Auto-fix: add -proto tcp to rules with -dport but no -proto
+                        if grep -E "^(IN|OUT) (ACCEPT|DROP|REJECT).*-dport [0-9,]+\s*$" "$fw_file" >/dev/null 2>&1; then
+                            echo "  Fixing: Adding -proto tcp to port-based rules..."
+                            sed -i.bak 's/\(^[[:space:]]*\(IN\|OUT\)[[:space:]]\+\(ACCEPT\|DROP\|REJECT\).*-dport[[:space:]]\+[0-9,]\+\)\s*$/\1 -proto tcp/' "$fw_file"
+                            echo "  ✓ Fixed rules in $fw_file (backup: ${fw_file}.bak)"
+                        fi
+                    fi
+                fi
+            fi
+        done
+        
+        # Recompile firewall after fixes
+        echo
+        echo "Recompiling firewall configuration..."
+        pve-firewall compile 2>&1 | grep -v "^$"
+    fi
+else
+    echo "⚠️  pve-firewall not available"
+fi
 echo
 
-# Check for failed authentication attempts
-echo "Recent failed auth attempts:"
-tail -20 /var/log/auth.log | grep "authentication failure"
+# Check for failed authentication attempts (using journalctl for systemd)
+echo "Recent Failed Authentication Attempts:"
+echo "─────────────────────────────────────────"
+if command -v journalctl >/dev/null 2>&1; then
+    failed_auth=$(journalctl -u ssh.service --since "24 hours ago" 2>/dev/null | grep -i "failed\|failure" | wc -l)
+    if [ "$failed_auth" -gt 0 ]; then
+        echo "⚠️  $failed_auth failed SSH authentication attempts in last 24 hours"
+        journalctl -u ssh.service --since "24 hours ago" 2>/dev/null | grep -i "failed\|failure" | tail -5 | sed 's/^/  /'
+    else
+        echo "✓ No failed authentication attempts in last 24 hours"
+    fi
+else
+    # Fallback to auth.log if available
+    if [ -f /var/log/auth.log ]; then
+        failed_auth=$(tail -100 /var/log/auth.log | grep -i "authentication failure" | wc -l)
+        if [ "$failed_auth" -gt 0 ]; then
+            echo "⚠️  $failed_auth recent authentication failures"
+            tail -20 /var/log/auth.log | grep "authentication failure" | tail -5 | sed 's/^/  /'
+        else
+            echo "✓ No authentication failures"
+        fi
+    else
+        echo "ℹ️  Unable to check authentication logs"
+    fi
+fi
 echo
 
 # Check container status
 echo "Container Status:"
-pct list
+echo "─────────────────────────────────────────"
+if command -v pct >/dev/null 2>&1; then
+    containers=$(pct list 2>/dev/null | tail -n +2)
+    if [ -n "$containers" ]; then
+        echo "$containers" | while read line; do
+            ctid=$(echo "$line" | awk '{print $1}')
+            status=$(echo "$line" | awk '{print $2}')
+            name=$(echo "$line" | awk '{print $3}')
+            if [ "$status" = "running" ]; then
+                echo "  ✓ $ctid ($name): running"
+            else
+                echo "  ⚠️  $ctid ($name): $status"
+            fi
+        done
+    else
+        echo "  No containers found"
+    fi
+else
+    echo "  Unable to check containers (pct not available)"
+fi
 echo
 
 # Check system updates
-echo "Available updates:"
-apt list --upgradable 2>/dev/null | wc -l
+echo "System Updates:"
+echo "─────────────────────────────────────────"
+if command -v apt >/dev/null 2>&1; then
+    updates=$(apt list --upgradable 2>/dev/null | grep -c "upgradable" || echo 0)
+    security=$(apt list --upgradable 2>/dev/null | grep -c "security" || echo 0)
+    
+    if [ "$updates" -eq 0 ]; then
+        echo "✓ System is up to date"
+    else
+        echo "ℹ️  $updates package(s) available for update"
+        if [ "$security" -gt 0 ]; then
+            echo "⚠️  $security security update(s) available - APPLY SOON!"
+        fi
+    fi
+else
+    echo "  Unable to check updates"
+fi
 echo
+
+# System resource check
+echo "System Resources:"
+echo "─────────────────────────────────────────"
+# Disk usage
+disk_usage=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
+if [ "$disk_usage" -gt 90 ]; then
+    echo "⚠️  Disk usage: ${disk_usage}% (HIGH!)"
+elif [ "$disk_usage" -gt 80 ]; then
+    echo "⚠️  Disk usage: ${disk_usage}%"
+else
+    echo "✓ Disk usage: ${disk_usage}%"
+fi
+
+# Memory usage
+if command -v free >/dev/null 2>&1; then
+    mem_usage=$(free | grep Mem | awk '{printf "%.0f", ($3/$2) * 100}')
+    if [ "$mem_usage" -gt 90 ]; then
+        echo "⚠️  Memory usage: ${mem_usage}% (HIGH!)"
+    else
+        echo "✓ Memory usage: ${mem_usage}%"
+    fi
+fi
+
+echo
+echo "=== End of Security Check ==="
 EOF
 
     chmod +x /usr/local/bin/security-check.sh
