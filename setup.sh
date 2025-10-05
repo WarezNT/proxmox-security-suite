@@ -109,6 +109,10 @@ echo
 
 echo -e "${BLUE}Step 3/5: Installing dependencies...${NC}"
 apt-get update -qq
+
+# Set non-interactive mode to avoid prompts (especially for iptables-persistent)
+export DEBIAN_FRONTEND=noninteractive
+
 apt-get install -y -qq \
     fail2ban \
     iptables \
@@ -120,6 +124,9 @@ apt-get install -y -qq \
     wget \
     nmap \
     &> /dev/null
+
+# Unset DEBIAN_FRONTEND
+unset DEBIAN_FRONTEND
 
 echo -e "${GREEN}[OK] Dependencies installed${NC}"
 echo
