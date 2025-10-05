@@ -254,60 +254,114 @@ generate_report() {
 case "$1" in
     start)
         if [ -f "$PID_FILE" ] && kill -0 $(cat "$PID_FILE") 2>/dev/null; then
-            echo -e "${YELLOW}Security monitor is already running${NC}"
+            echo -e "${YELLOW}⚠️  Security monitor is already running${NC}"
+            echo -e "   PID: $(cat "$PID_FILE")"
+            echo -e "   Use '${BLUE}$0 status${NC}' for details"
             exit 1
         fi
         
-        echo -e "${GREEN}Starting Proxmox security monitor...${NC}"
+        echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║     Starting Proxmox Security Monitor...                ║${NC}"
+        echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+        echo
         nohup bash -c "$(declare -f start_monitoring check_network_activity check_auth_logs check_system_integrity check_firewall_rules check_processes check_disk_usage log_message send_alert); start_monitoring" > "$LOG_DIR/monitor.log" 2>&1 &
         echo $! > "$PID_FILE"
-        echo -e "${GREEN}✓ Security monitor started (PID: $!)${NC}"
+        echo -e "${GREEN}✅ Security monitor started successfully!${NC}"
+        echo
+        echo -e "${BLUE}Details:${NC}"
+        echo -e "  • PID: ${GREEN}$!${NC}"
+        echo -e "  • Log file: ${BLUE}$LOG_DIR/security.log${NC}"
+        echo -e "  • Monitor log: ${BLUE}$LOG_DIR/monitor.log${NC}"
+        echo -e "  • Check status: ${YELLOW}$0 status${NC}"
+        echo
         ;;
         
     stop)
         if [ -f "$PID_FILE" ]; then
             local pid=$(cat "$PID_FILE")
+            echo -e "${YELLOW}Stopping security monitor (PID: $pid)...${NC}"
             if kill "$pid" 2>/dev/null; then
                 rm -f "$PID_FILE"
-                echo -e "${GREEN}✓ Security monitor stopped${NC}"
+                echo -e "${GREEN}✅ Security monitor stopped${NC}"
             else
-                echo -e "${RED}Failed to stop security monitor${NC}"
+                echo -e "${RED}❌ Failed to stop security monitor${NC}"
                 rm -f "$PID_FILE"
             fi
         else
-            echo -e "${YELLOW}Security monitor is not running${NC}"
+            echo -e "${YELLOW}⚠️  Security monitor is not running${NC}"
         fi
         ;;
         
     status)
+        echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║     Security Monitor Status                              ║${NC}"
+        echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+        echo
         if [ -f "$PID_FILE" ] && kill -0 $(cat "$PID_FILE") 2>/dev/null; then
-            echo -e "${GREEN}Security monitor is running (PID: $(cat "$PID_FILE"))${NC}"
-            echo "Log file: $LOG_DIR/security.log"
-            echo "Monitor log: $LOG_DIR/monitor.log"
+            echo -e "${GREEN}● Status: Running${NC}"
+            echo -e "  PID: $(cat "$PID_FILE")"
+            echo -e "  Log file: $LOG_DIR/security.log"
+            echo -e "  Monitor log: $LOG_DIR/monitor.log"
+            echo
+            echo -e "${BLUE}Recent activity:${NC}"
+            if [ -f "$LOG_DIR/security.log" ]; then
+                tail -5 "$LOG_DIR/security.log" | sed 's/^/  /'
+            else
+                echo "  No activity logged yet"
+            fi
         else
-            echo -e "${RED}Security monitor is not running${NC}"
+            echo -e "${RED}○ Status: Not running${NC}"
+            echo
+            echo -e "Start with: ${YELLOW}$0 start${NC}"
         fi
+        echo
         ;;
         
     check)
-        echo -e "${BLUE}Running security check...${NC}"
+        echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║     Running Security Check...                            ║${NC}"
+        echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+        echo
+        echo -e "${YELLOW}[1/6]${NC} Checking network activity..."
         check_network_activity
+        echo -e "${YELLOW}[2/6]${NC} Checking authentication logs..."
         check_auth_logs
+        echo -e "${YELLOW}[3/6]${NC} Checking system integrity..."
         check_system_integrity
+        echo -e "${YELLOW}[4/6]${NC} Checking firewall rules..."
         check_firewall_rules
+        echo -e "${YELLOW}[5/6]${NC} Checking processes..."
         check_processes
+        echo -e "${YELLOW}[6/6]${NC} Checking disk usage..."
         check_disk_usage
-        echo -e "${GREEN}✓ Security check completed${NC}"
+        echo
+        echo -e "${GREEN}✅ Security check completed!${NC}"
+        echo -e "   Check logs for details: ${BLUE}$LOG_DIR/security.log${NC}"
+        echo
         ;;
         
     report)
-        echo -e "${BLUE}Generating security report...${NC}"
+        echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║     Generating Security Report...                        ║${NC}"
+        echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+        echo
         report_file=$(generate_report)
-        echo -e "${GREEN}✓ Report saved to: $report_file${NC}"
+        echo -e "${GREEN}✅ Report generated successfully!${NC}"
+        echo
+        echo -e "${BLUE}Report location:${NC}"
+        echo -e "  ${GREEN}$report_file${NC}"
+        echo
+        echo -e "${BLUE}View report:${NC}"
+        echo -e "  ${YELLOW}cat $report_file${NC}"
+        echo -e "  ${YELLOW}less $report_file${NC}"
+        echo
         ;;
         
     install)
-        echo -e "${BLUE}Installing security monitor as system service...${NC}"
+        echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║     Installing Security Monitor Service...               ║${NC}"
+        echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+        echo
         
         # Copy script to system location
         cp "$0" "$SCRIPT_DIR/proxmox-security-monitor"
@@ -333,24 +387,44 @@ EOF
 
         systemctl daemon-reload
         systemctl enable proxmox-security-monitor
-        echo -e "${GREEN}✓ Security monitor installed as system service${NC}"
-        echo "Start with: systemctl start proxmox-security-monitor"
+        echo
+        echo -e "${GREEN}✅ Security monitor installed as system service!${NC}"
+        echo
+        echo -e "${BLUE}Service management:${NC}"
+        echo -e "  • Start: ${YELLOW}systemctl start proxmox-security-monitor${NC}"
+        echo -e "  • Stop: ${YELLOW}systemctl stop proxmox-security-monitor${NC}"
+        echo -e "  • Status: ${YELLOW}systemctl status proxmox-security-monitor${NC}"
+        echo -e "  • Logs: ${YELLOW}journalctl -u proxmox-security-monitor -f${NC}"
+        echo
         ;;
         
     *)
-        echo "Usage: $0 {start|stop|status|check|report|install}"
+        clear
+        echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${BLUE}║     Proxmox Security Monitor - v1.0.0                   ║${NC}"
+        echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
         echo
-        echo "Commands:"
-        echo "  start   - Start real-time security monitoring"
-        echo "  stop    - Stop security monitoring"
-        echo "  status  - Check monitor status"
-        echo "  check   - Run one-time security check"
-        echo "  report  - Generate comprehensive security report"
-        echo "  install - Install as system service"
+        echo -e "${GREEN}Available commands:${NC}"
         echo
-        echo "Configuration:"
-        echo "  Edit ALERT_EMAIL in script for email alerts"
-        echo "  Logs stored in: $LOG_DIR"
+        echo -e "  ${YELLOW}start${NC}   🚀 Start real-time security monitoring"
+        echo -e "  ${YELLOW}stop${NC}    🛑 Stop security monitoring"
+        echo -e "  ${YELLOW}status${NC}  📊 Check monitor status"
+        echo -e "  ${YELLOW}check${NC}   🔍 Run one-time security check"
+        echo -e "  ${YELLOW}report${NC}  📝 Generate comprehensive security report"
+        echo -e "  ${YELLOW}install${NC} ⚙️  Install as system service"
+        echo
+        echo -e "${BLUE}Usage:${NC}"
+        echo -e "  $0 ${YELLOW}<command>${NC}"
+        echo
+        echo -e "${BLUE}Examples:${NC}"
+        echo -e "  $0 start        # Start monitoring in background"
+        echo -e "  $0 check        # Run security checks now"
+        echo -e "  $0 report       # Generate detailed report"
+        echo
+        echo -e "${BLUE}Configuration:${NC}"
+        echo -e "  • Email alerts: ${CONFIG_FILE}"
+        echo -e "  • Log directory: ${LOG_DIR}"
+        echo
         exit 1
         ;;
 esac

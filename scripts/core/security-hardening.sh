@@ -520,60 +520,147 @@ EOF
     echo -e "${BLUE}  Daily reports will be sent to: ${ADMIN_EMAIL}${NC}"
 }
 
+# Show interactive menu
+show_menu() {
+    clear
+    echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║     Proxmox Security Hardening - v1.0.0                ║${NC}"
+    echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+    echo
+    echo -e "${GREEN}What would you like to configure?${NC}"
+    echo
+    echo -e "  ${YELLOW}1)${NC} 🔒 Install and configure Fail2Ban"
+    echo -e "  ${YELLOW}2)${NC} 🛡️  Configure container-level firewalls"
+    echo -e "  ${YELLOW}3)${NC} 📊 Setup network monitoring"
+    echo -e "  ${YELLOW}4)${NC} 💾 Configure backup security"
+    echo -e "  ${YELLOW}5)${NC} 🔐 Harden SSH configuration"
+    echo -e "  ${YELLOW}6)${NC} 📧 Setup log monitoring"
+    echo -e "  ${YELLOW}7)${NC} 🔍 Create security check script"
+    echo -e "  ${YELLOW}8)${NC} ⚡ Apply all configurations"
+    echo -e "  ${YELLOW}0)${NC} ❌ Exit"
+    echo
+}
+
 # Main menu
 main_menu() {
-    echo "Select security hardening options:"
-    echo "1) Install and configure Fail2Ban"
-    echo "2) Configure container-level firewalls"
-    echo "3) Setup network monitoring"
-    echo "4) Configure backup security"
-    echo "5) Harden SSH configuration"
-    echo "6) Setup log monitoring"
-    echo "7) Create security check script"
-    echo "8) All of the above"
-    echo "9) Exit"
-    echo
-    read -p "Enter your choice (1-9): " choice
-    
-    case $choice in
-        1) install_fail2ban ;;
-        2) configure_container_firewall ;;
-        3) setup_monitoring ;;
-        4) setup_backup_security ;;
-        5) harden_ssh ;;
-        6) setup_log_monitoring ;;
-        7) create_security_checker ;;
-        8) 
-            install_fail2ban
-            configure_container_firewall
-            setup_monitoring
-            setup_backup_security
-            harden_ssh
-            setup_log_monitoring
-            create_security_checker
-            ;;
-        9) exit 0 ;;
-        *) echo "Invalid option" ;;
-    esac
+    while true; do
+        show_menu
+        read -p "Enter your choice [0-8]: " choice
+        echo
+        
+        case $choice in
+            1)
+                echo -e "${BLUE}🔒 Installing and configuring Fail2Ban...${NC}"
+                echo
+                install_fail2ban
+                echo
+                read -p "Press Enter to continue..."
+                ;;
+            2)
+                echo -e "${BLUE}🛡️  Configuring container-level firewalls...${NC}"
+                echo
+                configure_container_firewall
+                echo
+                read -p "Press Enter to continue..."
+                ;;
+            3)
+                echo -e "${BLUE}📊 Setting up network monitoring...${NC}"
+                echo
+                setup_monitoring
+                echo
+                read -p "Press Enter to continue..."
+                ;;
+            4)
+                echo -e "${BLUE}💾 Configuring backup security...${NC}"
+                echo
+                setup_backup_security
+                echo
+                read -p "Press Enter to continue..."
+                ;;
+            5)
+                echo -e "${BLUE}🔐 Hardening SSH configuration...${NC}"
+                echo
+                harden_ssh
+                echo
+                read -p "Press Enter to continue..."
+                ;;
+            6)
+                echo -e "${BLUE}📧 Setting up log monitoring...${NC}"
+                echo
+                setup_log_monitoring
+                echo
+                read -p "Press Enter to continue..."
+                ;;
+            7)
+                echo -e "${BLUE}🔍 Creating security check script...${NC}"
+                echo
+                create_security_checker
+                echo
+                read -p "Press Enter to continue..."
+                ;;
+            8)
+                echo -e "${YELLOW}⚡ Applying all security configurations...${NC}"
+                echo
+                read -p "This will configure all security features. Continue? (y/n): " confirm
+                if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+                    echo
+                    echo -e "${BLUE}[1/7]${NC} Installing Fail2Ban..."
+                    install_fail2ban
+                    echo
+                    echo -e "${BLUE}[2/7]${NC} Configuring container firewalls..."
+                    configure_container_firewall
+                    echo
+                    echo -e "${BLUE}[3/7]${NC} Setting up network monitoring..."
+                    setup_monitoring
+                    echo
+                    echo -e "${BLUE}[4/7]${NC} Configuring backup security..."
+                    setup_backup_security
+                    echo
+                    echo -e "${BLUE}[5/7]${NC} Hardening SSH..."
+                    harden_ssh
+                    echo
+                    echo -e "${BLUE}[6/7]${NC} Setting up log monitoring..."
+                    setup_log_monitoring
+                    echo
+                    echo -e "${BLUE}[7/7]${NC} Creating security checker..."
+                    create_security_checker
+                    echo
+                    echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
+                    echo -e "${GREEN}║     All Security Configurations Completed!              ║${NC}"
+                    echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
+                else
+                    echo "Cancelled."
+                fi
+                echo
+                read -p "Press Enter to continue..."
+                ;;
+            0)
+                echo -e "${GREEN}👋 Security hardening complete. Goodbye!${NC}"
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}❌ Invalid choice. Please select 0-8.${NC}"
+                sleep 2
+                ;;
+        esac
+    done
 }
 
 # Run main menu
 main_menu
 
 echo
-echo -e "${BLUE}============================================${NC}"
-echo -e "${BLUE}    Security Hardening Complete!${NC}"
-echo -e "${BLUE}============================================${NC}"
+echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║     Security Hardening Complete!                        ║${NC}"
+echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo
-echo -e "${GREEN}Next steps:${NC}"
-echo "1. Update email addresses in log monitoring configs"
-echo "2. Test fail2ban: fail2ban-client status"
-echo "3. Review firewall rules: pve-firewall status"
-echo "4. Run security check: /usr/local/bin/security-check.sh"
-echo "5. Monitor logs: tail -f /var/log/fail2ban.log"
+echo -e "${GREEN}✅ Next steps:${NC}"
+echo "  1. Test fail2ban: ${BLUE}fail2ban-client status${NC}"
+echo "  2. Review firewall rules: ${BLUE}pve-firewall status${NC}"
+echo "  3. Run security check: ${BLUE}/usr/local/bin/security-check.sh${NC}"
+echo "  4. Monitor logs: ${BLUE}tail -f /var/log/fail2ban.log${NC}"
 echo
-echo -e "${YELLOW}Remember to:${NC}"
-echo "• Change default backup user password"
-echo "• Configure email settings for alerts"
-echo "• Test all services after applying changes"
-echo "• Keep Proxmox and containers updated"
+echo -e "${YELLOW}⚠️  Remember to:${NC}"
+echo "  • Change default backup user password"
+echo "  • Test all services after applying changes"
+echo "  • Keep Proxmox and containers updated"
