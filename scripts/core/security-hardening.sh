@@ -85,18 +85,23 @@ configure_container_firewall() {
         echo -e "${BLUE}Detecting network configuration...${NC}"
         
         # Detect private network from bridges
-        PRIVATE_NETWORK=$(ip addr show | grep -oP 'inet \K10\.\d+\.\d+\.\d+/\d+' | head -1)
-        if [ -z "$PRIVATE_NETWORK" ]; then
-            PRIVATE_NETWORK="10.10.0.0/24"
+        PRIVATE_IP=$(ip addr show | grep -oP 'inet \K10\.\d+\.\d+\.\d+/\d+' | head -1)
+        if [ -n "$PRIVATE_IP" ]; then
+            # Extract subnet from IP (convert 10.20.0.128/24 to 10.20.0.0/24)
+            IP_OCTETS=$(echo "$PRIVATE_IP" | cut -d'/' -f1 | cut -d'.' -f1-3)
+            SUBNET_MASK=$(echo "$PRIVATE_IP" | cut -d'/' -f2)
+            PRIVATE_NETWORK="${IP_OCTETS}.0/${SUBNET_MASK}"
+        else
+            PRIVATE_NETWORK="10.10.0.0/24"  # Default fallback
         fi
         
         # Detect Tailscale network
-        TAILSCALE_NETWORK=$(ip addr show tailscale0 2>/dev/null | grep -oP 'inet \K100\.\d+\.\d+\.\d+/\d+' | head -1)
-        if [ -z "$TAILSCALE_NETWORK" ]; then
-            TAILSCALE_NETWORK="100.64.0.0/10"  # Default Tailscale CGNAT range
-        else
-            # Extract network from Tailscale IP (keep /10 for full range)
+        TAILSCALE_IP=$(ip addr show tailscale0 2>/dev/null | grep -oP 'inet \K100\.\d+\.\d+\.\d+/\d+' | head -1)
+        if [ -n "$TAILSCALE_IP" ]; then
+            # Always use full Tailscale CGNAT range for flexibility
             TAILSCALE_NETWORK="100.64.0.0/10"
+        else
+            TAILSCALE_NETWORK="100.64.0.0/10"  # Default Tailscale CGNAT range
         fi
         
         echo
