@@ -4,7 +4,10 @@
 # Run this script from an external Ubuntu VPS to test security
 # Usage: ./security-test.sh <TARGET_IP> [DOMAIN] [TAILSCALE_IP]
 
-if [ -z "$1" ]; then
+# Exit on error for better error handling
+set -euo pipefail
+
+if [ -z "${1:-}" ]; then
     echo "Usage: $0 <TARGET_IP> [DOMAIN] [TAILSCALE_IP]"
     echo "Example: $0 YOUR_PUBLIC_IP yourdomain.com YOUR_TAILSCALE_IP"
     exit 1
@@ -12,7 +15,7 @@ fi
 
 TARGET_IP="$1"
 DOMAIN="${2:-$TARGET_IP}"  # Use IP if no domain provided
-TAILSCALE_IP="${3}"  # Optional Tailscale IP for testing
+TAILSCALE_IP="${3:-}"  # Optional Tailscale IP for testing
 
 # Colors for output
 RED='\033[0;31m'
@@ -59,7 +62,7 @@ test_port() {
     
     echo -n "Testing $service (port $port): "
     
-    if timeout 5 nc -z $ip $port 2>/dev/null; then
+    if timeout 5 nc -z "$ip" "$port" 2>/dev/null; then
         if [ "$expected" = "open" ]; then
             echo -e "${GREEN}✓ OPEN (Expected)${NC}"
         else
@@ -182,8 +185,7 @@ echo "===================================="
 
 # Test if SSH is accessible (should fail)
 echo "Testing SSH access (should be blocked):"
-timeout 5 ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no root@$TARGET_IP exit 2>/dev/null
-if [ $? -eq 0 ]; then
+if timeout 5 ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "root@$TARGET_IP" exit 2>/dev/null; then
     echo -e "${RED}✗ SSH is accessible! Security risk!${NC}"
 else
     echo -e "${GREEN}✓ SSH properly blocked${NC}"

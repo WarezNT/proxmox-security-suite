@@ -58,6 +58,9 @@ copilot-instructions.md
 ai-instructions.md
 *-ai-*.md
 
+# Development tools (internal use only)
+dev-tools/
+
 # Personal IP addresses and domains (if accidentally committed)
 *-personal.conf
 *-custom.conf

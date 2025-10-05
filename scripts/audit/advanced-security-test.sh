@@ -4,7 +4,10 @@
 # This script performs more intensive security testing
 # Usage: ./advanced-security-test.sh <TARGET_IP> [DOMAIN]
 
-if [ -z "$1" ]; then
+# Exit on error for better error handling
+set -euo pipefail
+
+if [ -z "${1:-}" ]; then
     echo "Usage: $0 <TARGET_IP> [DOMAIN]"
     echo "Example: $0 YOUR_PUBLIC_IP yourdomain.com"
     exit 1
@@ -49,10 +52,11 @@ echo
 check_tools() {
     echo "Checking required tools..."
     
-    tools=("nmap" "nikto" "curl" "dig" "traceroute" "openssl")
+    local tools=("nmap" "nikto" "curl" "dig" "traceroute" "openssl")
+    local missing_tools=false
     
     for tool in "${tools[@]}"; do
-        if command -v $tool &> /dev/null; then
+        if command -v "$tool" &> /dev/null; then
             echo -e "${GREEN}✓ $tool installed${NC}"
         else
             echo -e "${RED}✗ $tool not found${NC}"
@@ -73,13 +77,13 @@ port_scan() {
     echo "============================="
     
     echo "Scanning top 1000 ports..."
-    nmap -T4 -F $TARGET_IP | grep -E "(open|closed|filtered)"
+    nmap -T4 -F "$TARGET_IP" | grep -E "(open|closed|filtered)"
     
     echo -e "\nScanning management ports specifically..."
-    nmap -p 22,8006,81,3128,5900-5920 $TARGET_IP
+    nmap -p 22,8006,81,3128,5900-5920 "$TARGET_IP"
     
     echo -e "\nScanning for common services..."
-    nmap -sV -p 80,443 $TARGET_IP
+    nmap -sV -p 80,443 "$TARGET_IP"
 }
 
 # Web vulnerability scan
@@ -89,23 +93,24 @@ web_vuln_scan() {
     
     if [ "$DOMAIN" != "$TARGET_IP" ]; then
         echo "Running Nikto web scanner on domain..."
-        nikto -h https://$DOMAIN -maxtime 300 | head -20
+        nikto -h "https://$DOMAIN" -maxtime 300 | head -20
         
         echo -e "\nTesting common web vulnerabilities on domain..."
         test_target="https://$DOMAIN"
     else
         echo "Running Nikto web scanner on IP..."
-        nikto -h http://$TARGET_IP -maxtime 300 | head -20
+        nikto -h "http://$TARGET_IP" -maxtime 300 | head -20
         
         echo -e "\nTesting common web vulnerabilities on IP..."
         test_target="http://$TARGET_IP"
     fi
     
     # Test for common files
-    common_files=("robots.txt" "sitemap.xml" ".htaccess" "wp-admin" "admin" "phpmyadmin" "manager/html")
+    local common_files=("robots.txt" "sitemap.xml" ".htaccess" "wp-admin" "admin" "phpmyadmin" "manager/html")
     
     for file in "${common_files[@]}"; do
         echo -n "Testing /$file: "
+        local status
         status=$(curl -s -o /dev/null -w "%{http_code}" "$test_target/$file")
         if [ "$status" = "200" ]; then
             echo -e "${YELLOW}Found (HTTP $status)${NC}"
@@ -124,7 +129,8 @@ ssl_analysis() {
         echo "Testing SSL configuration for domain $DOMAIN..."
         
         # Get certificate info
-        cert_info=$(echo | openssl s_client -connect $DOMAIN:443 -servername $DOMAIN 2>/dev/null | openssl x509 -noout -text)
+        local cert_info
+        cert_info=$(echo | openssl s_client -connect "$DOMAIN:443" -servername "$DOMAIN" 2>/dev/null | openssl x509 -noout -text)
         
         echo "Certificate issuer:"
         echo "$cert_info" | grep "Issuer:" | head -1
@@ -138,11 +144,11 @@ ssl_analysis() {
         # Test SSL versions
         echo -e "\nTesting SSL/TLS protocol support:"
         
-        protocols=("ssl2" "ssl3" "tls1" "tls1_1" "tls1_2" "tls1_3")
+        local protocols=("ssl2" "ssl3" "tls1" "tls1_1" "tls1_2" "tls1_3")
         
         for protocol in "${protocols[@]}"; do
             echo -n "Testing $protocol: "
-            if echo | timeout 5 openssl s_client -connect $DOMAIN:443 -$protocol 2>/dev/null | grep -q "Verify return code: 0"; then
+            if echo | timeout 5 openssl s_client -connect "$DOMAIN:443" -"$protocol" 2>/dev/null | grep -q "Verify return code: 0"; then
                 if [ "$protocol" = "ssl2" ] || [ "$protocol" = "ssl3" ] || [ "$protocol" = "tls1" ]; then
                     echo -e "${RED}Supported (Insecure!)${NC}"
                 else
@@ -168,15 +174,16 @@ header_analysis() {
     
     echo "Analyzing security headers..."
     
+    local headers
     if [ "$DOMAIN" != "$TARGET_IP" ]; then
-        headers=$(curl -s -I https://$DOMAIN)
+        headers=$(curl -s -I "https://$DOMAIN")
         echo "Testing HTTPS headers for $DOMAIN"
     else
-        headers=$(curl -s -I http://$TARGET_IP)
+        headers=$(curl -s -I "http://$TARGET_IP")
         echo "Testing HTTP headers for $TARGET_IP"
     fi
     
-    security_headers=(
+    local security_headers=(
         "Strict-Transport-Security"
         "Content-Security-Policy"
         "X-Frame-Options"
@@ -206,13 +213,13 @@ dns_analysis() {
     echo "========================="
     
     echo "DNS records for $DOMAIN:"
-    dig $DOMAIN ANY +short
+    dig "$DOMAIN" ANY +short
     
     echo -e "\nChecking for DNS security features:"
     
     # Check DNSSEC
     echo -n "DNSSEC: "
-    if dig $DOMAIN +dnssec | grep -q "RRSIG"; then
+    if dig "$DOMAIN" +dnssec | grep -q "RRSIG"; then
         echo -e "${GREEN}Enabled${NC}"
     else
         echo -e "${YELLOW}Not enabled${NC}"
@@ -220,7 +227,7 @@ dns_analysis() {
     
     # Check SPF record
     echo -n "SPF Record: "
-    if dig TXT $DOMAIN | grep -q "v=spf1"; then
+    if dig TXT "$DOMAIN" | grep -q "v=spf1"; then
         echo -e "${GREEN}Present${NC}"
     else
         echo -e "${YELLOW}Not found${NC}"
@@ -228,7 +235,7 @@ dns_analysis() {
     
     # Check DMARC record
     echo -n "DMARC Record: "
-    if dig TXT _dmarc.$DOMAIN | grep -q "v=DMARC1"; then
+    if dig TXT "_dmarc.$DOMAIN" | grep -q "v=DMARC1"; then
         echo -e "${GREEN}Present${NC}"
     else
         echo -e "${YELLOW}Not found${NC}"
@@ -242,17 +249,19 @@ rate_limit_test() {
     
     echo "Testing rate limiting (making 20 rapid requests)..."
     
+    local test_url
     if [ "$DOMAIN" != "$TARGET_IP" ]; then
         test_url="https://$DOMAIN"
     else
         test_url="http://$TARGET_IP"
     fi
     
-    success=0
-    blocked=0
+    local success=0
+    local blocked=0
     
     for i in {1..20}; do
-        status=$(curl -s -o /dev/null -w "%{http_code}" $test_url)
+        local status
+        status=$(curl -s -o /dev/null -w "%{http_code}" "$test_url")
         if [ "$status" = "200" ]; then
             ((success++))
         elif [ "$status" = "429" ] || [ "$status" = "503" ]; then
